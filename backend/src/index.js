@@ -1,6 +1,7 @@
 import { createApp } from './app.js';
 import { connectDB } from './config/db.js';
-import { MONGODB_URI, PORT } from './config/env.js';
+import { KEEP_ALIVE_INTERVAL_MIN, KEEP_ALIVE_URL, MONGODB_URI, PORT } from './config/env.js';
+import { startKeepAlive } from './services/keepAlive.js';
 
 async function start() {
   await connectDB(MONGODB_URI);
@@ -8,6 +9,7 @@ async function start() {
   const app = createApp();
   app.listen(PORT, () => {
     console.log(`[server] sales-tracker API listening on http://0.0.0.0:${PORT}`);
+    startKeepAlive({ url: KEEP_ALIVE_URL, intervalMinutes: KEEP_ALIVE_INTERVAL_MIN });
   });
 }
 

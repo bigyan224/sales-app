@@ -21,6 +21,19 @@ Production:
 npm start
 ```
 
+## Keeping a free host (Render) awake
+
+Render's free tier pauses a web service after ~15 min without inbound traffic.
+This repo ships a keep-alive cron that pings its own `/api/health` on a timer,
+which counts as traffic and prevents the pause:
+
+- Set `KEEP_ALIVE_URL` to the app's public URL, e.g. `https://yourapp.onrender.com`
+- `KEEP_ALIVE_INTERVAL_MIN` controls the ping interval (default `5`).
+
+Note: the timer only runs while the instance is awake, so the very first request
+still cold-starts the app. An external monitor (UptimeRobot etc.) is a
+belt-and-suspenders option if you need zero cold starts.
+
 ## Endpoints
 
 All under `/api`.
