@@ -1,0 +1,21 @@
+{
+  "name": "sales-tracker-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Backend API for the offline-first sales tracker (also serves the future admin web dashboard).",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.5.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

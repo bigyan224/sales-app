@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Sales Tracker",
+    "slug": "sales-tracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F4F6FA",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F4F6FA"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shop.salestracker",
+      "icon": "./assets/icon.png"
+    },
+    "android": {
+      "package": "com.shop.salestracker",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1F6FEB"
+      }
+    }
+  }
+}
