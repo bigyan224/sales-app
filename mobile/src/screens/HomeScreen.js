@@ -21,7 +21,7 @@ import { formatMoney } from '../utils/format';
 
 export default function HomeScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const { sales, todaySummary, addSale, removeSale, loading } = useSales();
+  const { sales, todaySummary, addSale, removeSale, markPaid, loading } = useSales();
   const syncStatus = useSyncStore((s) => s.status);
   const isOnline = useSyncStore((s) => s.isOnline);
   const pendingCount = useSyncStore((s) => s.pendingCount);
@@ -46,6 +46,17 @@ export default function HomeScreen({ navigation }) {
           style: 'destructive',
           onPress: () => void removeSale(sale.id),
         },
+      ],
+    );
+  };
+
+  const confirmMarkPaid = (sale) => {
+    Alert.alert(
+      'Mark as Paid',
+      `Mark "${sale.title ?? 'this sale'}" (${formatMoney(sale.salesAmount)}) as paid?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Mark Paid', onPress: () => void markPaid(sale.id) },
       ],
     );
   };
@@ -147,7 +158,13 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.emptyText}>No sales recorded yet today.</Text>
       ) : (
         todaySales.map((sale) => (
-          <SaleRow key={sale.id} sale={sale} onEdit={onEdit} onDelete={confirmDelete} />
+          <SaleRow
+            key={sale.id}
+            sale={sale}
+            onEdit={onEdit}
+            onDelete={confirmDelete}
+            onMarkPaid={confirmMarkPaid}
+          />
         ))
       )}
     </ScrollView>

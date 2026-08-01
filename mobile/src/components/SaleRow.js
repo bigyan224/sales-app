@@ -4,14 +4,18 @@ import { colors, radii, spacing, typography } from '../theme';
 import { formatBsLong, parseBsDateString } from '../services/nepaliDate';
 import { formatMoney } from '../utils/format';
 
-export function SaleRow({ sale, onEdit, onDelete }) {
+export function SaleRow({ sale, onEdit, onDelete, onMarkPaid }) {
   const parts = parseBsDateString(sale.bsDate);
   const dateLabel = parts ? formatBsLong(parts) : sale.bsDate;
+  const isCredit = sale.paymentStatus === 'pending';
 
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.date}>{dateLabel}</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.date}>{dateLabel}</Text>
+          {isCredit ? <Text style={styles.creditBadge}>Credit</Text> : null}
+        </View>
         <Text style={styles.amount}>{formatMoney(sale.salesAmount)}</Text>
       </View>
 
@@ -23,6 +27,10 @@ export function SaleRow({ sale, onEdit, onDelete }) {
         </Text>
       ) : null}
 
+      {isCredit ? (
+        <Text style={styles.pendingNote}>Payment pending</Text>
+      ) : null}
+
       <View style={styles.actions}>
         <Pressable
           style={({ pressed }) => [styles.action, styles.editAction, pressed && styles.pressed]}
@@ -30,6 +38,14 @@ export function SaleRow({ sale, onEdit, onDelete }) {
         >
           <Text style={styles.editText}>Edit</Text>
         </Pressable>
+        {isCredit && onMarkPaid ? (
+          <Pressable
+            style={({ pressed }) => [styles.action, styles.paidAction, pressed && styles.pressed]}
+            onPress={() => onMarkPaid(sale)}
+          >
+            <Text style={styles.paidText}>Mark Paid</Text>
+          </Pressable>
+        ) : null}
         <Pressable
           style={({ pressed }) => [styles.action, styles.deleteAction, pressed && styles.pressed]}
           onPress={() => onDelete(sale)}
@@ -53,9 +69,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flexShrink: 1,
+  },
   date: {
     fontSize: typography.small,
     color: colors.textMuted,
+    flexShrink: 1,
+  },
+  creditBadge: {
+    backgroundColor: colors.warningSoft,
+    color: colors.warning,
+    fontSize: 11,
+    fontWeight: '800',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.pill,
+    overflow: 'hidden',
   },
   amount: {
     fontSize: typography.section,
@@ -77,6 +110,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.success,
   },
+  pendingNote: {
+    fontSize: typography.small,
+    color: colors.warning,
+    fontWeight: '600',
+    marginTop: spacing.xs,
+  },
   actions: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -90,11 +129,19 @@ const styles = StyleSheet.create({
   editAction: {
     backgroundColor: colors.primarySoft,
   },
+  paidAction: {
+    backgroundColor: colors.successSoft,
+  },
   deleteAction: {
     backgroundColor: colors.dangerSoft,
   },
   editText: {
     color: colors.primaryDark,
+    fontSize: typography.label,
+    fontWeight: '700',
+  },
+  paidText: {
+    color: colors.success,
     fontSize: typography.label,
     fontWeight: '700',
   },

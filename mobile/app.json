@@ -23,6 +23,27 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1F6FEB"
       }
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2111f328-2e46-4b50-a0ae-ab99bed48837"
+      }
+    },
+    "plugins": [
+      "expo-sqlite",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "abiFilters": [
+              "arm64-v8a"
+            ],
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ],
+      "expo-font"
+    ]
   }
 }

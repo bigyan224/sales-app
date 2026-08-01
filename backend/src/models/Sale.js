@@ -12,6 +12,12 @@ const saleSchema = new mongoose.Schema(
     title: { type: String, default: null },
     salesAmount: { type: Number, required: true, min: 0 },
     profit: { type: Number, default: null },
+    paymentStatus: {
+      type: String,
+      enum: ['paid', 'pending'],
+      default: 'paid',
+      index: true,
+    },
     createdAt: { type: String, required: true },
     updatedAt: { type: String, required: true, index: true },
     syncStatus: {

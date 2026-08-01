@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing, typography } from '../theme';
 import { formatBsMonthKey, shiftBsMonth } from '../services/nepaliDate';
 
-/** Prev/next month navigator for the History screen. */
+/** Prev/next month navigator for the Dashboard calendar. */
 export function MonthSelector({ bsMonth, onChange }) {
   return (
     <View style={styles.container}>

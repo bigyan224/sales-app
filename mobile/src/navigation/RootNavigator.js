@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
-import HistoryScreen from '../screens/HistoryScreen';
+import PendingScreen from '../screens/PendingScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import EditSaleScreen from '../screens/EditSaleScreen';
 import { colors, typography } from '../theme';
@@ -13,7 +13,7 @@ const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
   Home: ['home', 'home-outline'],
-  History: ['time', 'time-outline'],
+  Pending: ['cash', 'cash-outline'],
   Dashboard: ['stats-chart', 'stats-chart-outline'],
 };
 
@@ -46,9 +46,9 @@ function MainTabs() {
         options={{ tabBarIcon: tabIcon('Home') }}
       />
       <Tab.Screen
-        name="History"
-        component={HistoryScreen}
-        options={{ tabBarIcon: tabIcon('History') }}
+        name="Pending"
+        component={PendingScreen}
+        options={{ tabBarIcon: tabIcon('Pending') }}
       />
       <Tab.Screen
         name="Dashboard"

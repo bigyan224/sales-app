@@ -34,6 +34,7 @@ export default function EditSaleScreen({ navigation, route }) {
     title: sale.title ?? '',
     salesAmount: sale.salesAmount,
     profit: sale.profit,
+    paymentStatus: sale.paymentStatus ?? 'paid',
   };
 
   return (

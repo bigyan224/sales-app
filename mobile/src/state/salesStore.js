@@ -37,6 +37,7 @@ export const useSalesStore = create((set, get) => ({
       title: input.title?.trim() || null,
       salesAmount: input.salesAmount,
       profit: input.profit ?? null,
+      paymentStatus: input.paymentStatus ?? 'paid',
       createdAt: now,
       updatedAt: now,
       syncStatus: 'pending',
@@ -59,6 +60,7 @@ export const useSalesStore = create((set, get) => ({
       title: input.title?.trim() || null,
       salesAmount: input.salesAmount,
       profit: input.profit ?? null,
+      paymentStatus: input.paymentStatus ?? existing.paymentStatus ?? 'paid',
       updatedAt: now,
       syncStatus: 'pending',
       deletedAt: null,
@@ -70,6 +72,12 @@ export const useSalesStore = create((set, get) => ({
 
   removeSale: async (id) => {
     await saleRepository.softDeleteSale(id);
+    await get().refresh();
+    triggerSync();
+  },
+
+  markPaid: async (id) => {
+    await saleRepository.markPaid(id);
     await get().refresh();
     triggerSync();
   },

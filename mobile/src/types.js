@@ -3,6 +3,8 @@
  *
  * @typedef {'synced' | 'pending' | 'deleted'} SyncStatus
  *
+ * @typedef {'paid' | 'pending'} PaymentStatus
+ *
  * @typedef {{ year: number, month: number, day: number }} BsDateParts
  *   `month` is 1-based (1 = Baisakh ... 12 = Chaitra).
  *
@@ -13,6 +15,7 @@
  *   title: string|null,
  *   salesAmount: number,
  *   profit: number|null,
+ *   paymentStatus: PaymentStatus,
  *   createdAt: string,     // ISO-8601
  *   updatedAt: string,     // ISO-8601 (used for last-write-wins sync)
  *   syncStatus: SyncStatus,
@@ -24,7 +27,8 @@
  *   adDate: string,
  *   title?: string|null,
  *   salesAmount: number,
- *   profit?: number|null
+ *   profit?: number|null,
+ *   paymentStatus?: PaymentStatus
  * }} SaleInput
  *
  * @typedef {{ totalSales: number, totalProfit: number, count: number }} SalesSummary

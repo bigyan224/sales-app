@@ -42,10 +42,17 @@ export const API_BASE_URL = 'http://192.168.1.100:4000/api';
 ## Screens
 
 - **Home** — quick-add a sale, today's totals, sync status.
-- **History** — browse sales day-by-day. Pick a month, then a day, or search.
-- **Dashboard** — weekly/monthly analytics. Charts of daily sales & profit,
-  with totals, transactions and average sale. All computed offline from SQLite.
-- **Edit Sale** — modal opened from History.
+- **Pending** — all credit sales awaiting payment, with total outstanding and a
+  "Mark Paid" button to settle each one.
+- **Dashboard** — monthly BS calendar heatmap + search. Shows month analytics
+  (daily bar chart, sales, profit, outstanding, collected) by default; tap a
+  date circle to drill into that day's entries with its own stats. All computed
+  offline from SQLite.
+- **Edit Sale** — modal opened from Home / Pending / Dashboard.
+
+Every sale is either **Cash** (default) or **Credit**. Credit sales show a
+badge, appear in the Pending tab, and are counted as Outstanding until marked
+paid. The `title` field holds the customer name + item (e.g. "Ram — 2 sacks").
 
 All data is permanently stored in MongoDB. To export, query the `sales`
 collection directly in MongoDB Atlas / Compass.
@@ -63,7 +70,7 @@ collection directly in MongoDB Atlas / Compass.
 App.js                 entry (DB init → navigation → auto-sync)
 src/
   components/          reusable UI (buttons, fields, BS date picker, charts…)
-  screens/             Home, History, Dashboard, Edit Sale
+  screens/             Home, Pending, Dashboard, Edit Sale
   services/            sync engine, HTTP client, Nepali dates
   db/                  SQLite connection + repository (all queries live here)
   state/               Zustand stores (sales + sync status)

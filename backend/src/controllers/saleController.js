@@ -45,6 +45,7 @@ export function parseSalePayload(body) {
     title: toNullableString(body.title),
     salesAmount: body.salesAmount,
     profit: toNullableNumber(body.profit),
+    paymentStatus: body.paymentStatus === 'pending' ? 'pending' : 'paid',
     createdAt: parseIsoOrNull(body.createdAt) ?? now,
     updatedAt: parseIsoOrNull(body.updatedAt) ?? now,
     syncStatus,

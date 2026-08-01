@@ -9,6 +9,16 @@ export function useSales() {
   const addSale = useSalesStore((s) => s.addSale);
   const updateSale = useSalesStore((s) => s.updateSale);
   const removeSale = useSalesStore((s) => s.removeSale);
+  const markPaid = useSalesStore((s) => s.markPaid);
 
-  return { sales, todaySummary, loading, refresh, addSale, updateSale, removeSale };
+  return {
+    sales,
+    todaySummary,
+    loading,
+    refresh,
+    addSale,
+    updateSale,
+    removeSale,
+    markPaid,
+  };
 }

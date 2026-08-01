@@ -28,6 +28,7 @@ export async function initDatabase() {
       title TEXT,
       sales_amount REAL NOT NULL,
       profit REAL,
+      payment_status TEXT NOT NULL DEFAULT 'paid',
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       sync_status TEXT NOT NULL DEFAULT 'pending',
@@ -43,4 +44,12 @@ export async function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_sales_updated_at ON sales (updated_at);
     CREATE INDEX IF NOT EXISTS idx_sales_sync_status ON sales (sync_status);
   `);
+
+  // Migration for databases created before the credit feature.
+  const columns = await db.getAllAsync('PRAGMA table_info(sales)');
+  if (!columns.some((c) => c.name === 'payment_status')) {
+    await db.execAsync(
+      "ALTER TABLE sales ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'paid'",
+    );
+  }
 }
