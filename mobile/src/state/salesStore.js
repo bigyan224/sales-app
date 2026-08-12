@@ -82,3 +82,12 @@ export const useSalesStore = create((set, get) => ({
     triggerSync();
   },
 }));
+
+// Refresh the UI after any successful sync. The sync engine writes pulled
+// records straight into SQLite; without this the in-memory `sales` list stays
+// stale, so changes made on other devices only appeared after a local edit.
+useSyncStore.subscribe((state, prev) => {
+  if (state.status === 'synced' && prev.status !== 'synced') {
+    void useSalesStore.getState().refresh();
+  }
+});
