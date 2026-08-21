@@ -1,7 +1,18 @@
 import { getDatabase } from './database';
 
 const INSERT_COLUMNS =
-  'id, bs_date, ad_date, title, sales_amount, profit, payment_status, created_at, updated_at, sync_status, deleted_at';
+  'id, bs_date, ad_date, title, sales_amount, profit, payment_status, product_ids, created_at, updated_at, sync_status, deleted_at';
+
+/** Parses the JSON-encoded product link list; never throws. */
+function parseProductIds(value) {
+  if (!value) return [];
+  try {
+    const arr = JSON.parse(value);
+    return Array.isArray(arr) ? arr.map(String) : [];
+  } catch {
+    return [];
+  }
+}
 
 function rowToSale(row) {
   return {
@@ -12,6 +23,7 @@ function rowToSale(row) {
     salesAmount: Number(row.sales_amount),
     profit: row.profit == null ? null : Number(row.profit),
     paymentStatus: row.payment_status ?? 'paid',
+    productIds: parseProductIds(row.product_ids),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     syncStatus: row.sync_status,
@@ -28,6 +40,7 @@ function saleToParams(sale) {
     sale.salesAmount,
     sale.profit,
     sale.paymentStatus ?? 'paid',
+    JSON.stringify(sale.productIds ?? []),
     sale.createdAt,
     sale.updatedAt,
     sale.syncStatus,
@@ -38,7 +51,7 @@ function saleToParams(sale) {
 export async function insertSale(sale) {
   const db = await getDatabase();
   await db.runAsync(
-    `INSERT INTO sales (${INSERT_COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    `INSERT INTO sales (${INSERT_COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
     saleToParams(sale),
   );
 }
@@ -47,7 +60,7 @@ export async function insertSale(sale) {
 export async function upsertSale(sale) {
   const db = await getDatabase();
   await db.runAsync(
-    `INSERT OR REPLACE INTO sales (${INSERT_COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    `INSERT OR REPLACE INTO sales (${INSERT_COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
     saleToParams(sale),
   );
 }
@@ -56,7 +69,8 @@ export async function updateSale(sale) {
   const db = await getDatabase();
   await db.runAsync(
     `UPDATE sales SET bs_date=?, ad_date=?, title=?, sales_amount=?, profit=?,
-     payment_status=?, created_at=?, updated_at=?, sync_status=?, deleted_at=? WHERE id=?`,
+     payment_status=?, product_ids=?, created_at=?, updated_at=?, sync_status=?, deleted_at=?
+     WHERE id=?`,
     [
       sale.bsDate,
       sale.adDate,
@@ -64,6 +78,7 @@ export async function updateSale(sale) {
       sale.salesAmount,
       sale.profit,
       sale.paymentStatus ?? 'paid',
+      JSON.stringify(sale.productIds ?? []),
       sale.createdAt,
       sale.updatedAt,
       sale.syncStatus,

@@ -1,5 +1,7 @@
+import { productRepository } from '../db/productRepository';
 import { saleRepository } from '../db/saleRepository';
 import { api } from './api';
+import { flushPendingProductUploads } from './imageService';
 
 /**
  * Callbacks the sync store registers so the service can report progress.
@@ -76,6 +78,16 @@ class SyncService {
       const now = new Date().toISOString();
       await saleRepository.setLastSyncAt(now);
       updater.setLastSyncAt(now);
+
+      // 3. Sync products in its own scope so a product problem can never
+      // block or fail the sales sync above.
+      try {
+        await syncProducts();
+        await flushPendingProductUploads();
+      } catch (productErr) {
+        console.error('[sync] products failed:', productErr?.message ?? productErr);
+      }
+
       updater.setStatus('synced');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sync failed';
@@ -92,6 +104,37 @@ class SyncService {
     const count = await saleRepository.getPendingCount();
     this.updater.setPendingCount(count);
   }
+}
+
+/** Push-then-pull for products, mirroring the sales flow. */
+async function syncProducts() {
+  const pending = await productRepository.getPendingProducts();
+  const tombstones = await productRepository.getDeletedTombstones();
+  const toPush = [...pending, ...tombstones];
+
+  if (toPush.length > 0) {
+    const results = await api.pushProductBatch(toPush);
+    const syncedIds = [];
+    const deletedIds = [];
+    for (const result of results) {
+      if (result.status === 'synced' || result.status === 'up-to-date') {
+        syncedIds.push(result.id);
+      } else if (result.status === 'deleted') {
+        deletedIds.push(result.id);
+      }
+    }
+    if (syncedIds.length > 0) {
+      await productRepository.markSynced(syncedIds);
+    }
+    for (const id of deletedIds) {
+      await productRepository.hardDeleteProduct(id);
+    }
+  }
+
+  const since = await productRepository.getLastSyncAt();
+  const remote = await api.fetchRemoteProducts(since);
+  await productRepository.applyRemoteProducts(remote.products ?? []);
+  await productRepository.setLastSyncAt(new Date().toISOString());
 }
 
 export const syncService = new SyncService();

@@ -18,6 +18,7 @@ const saleSchema = new mongoose.Schema(
       default: 'paid',
       index: true,
     },
+    productIds: { type: [String], default: [] },
     createdAt: { type: String, required: true },
     updatedAt: { type: String, required: true, index: true },
     syncStatus: {

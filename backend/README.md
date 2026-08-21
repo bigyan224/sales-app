@@ -48,6 +48,26 @@ All under `/api`.
 | DELETE | `/sales/:id`             | Delete a sale                                            |
 | POST   | `/sales/batch-sync`      | Batch push for offline sync (see below)                  |
 | GET    | `/sales/summary`         | Totals for `bsDate` or `bsMonth` (`totalSales`, `totalProfit`, `count`) |
+| GET    | `/products`              | List products. Query: `since`, `limit`, `offset`         |
+| GET    | `/products/:id`          | Get one product by UUID                                  |
+| POST   | `/products`              | Create a product (idempotent upsert by UUID)             |
+| PUT    | `/products/:id`          | Update a product (last-write-wins by `updatedAt`)        |
+| DELETE | `/products/:id`          | Delete a product                                         |
+| POST   | `/products/batch-sync`   | Batch push for offline sync (same contract as sales)     |
+
+## Product photos (Cloudinary)
+
+Product images are optional and upload **directly from the phone** to
+Cloudinary using an unsigned upload preset — this server is not involved at
+all. Configure the preset in the mobile app (`mobile/src/config.js`):
+
+1. Cloudinary dashboard -> Settings -> Upload -> Upload presets -> New preset
+2. Signing mode: **Unsigned**; asset folder e.g. `items`
+3. Copy the cloud name + preset name into `CLOUDINARY_CLOUD_NAME` /
+   `CLOUDINARY_UPLOAD_PRESET` in `mobile/src/config.js`
+
+Without that config the app still works — product photos just stay stored on
+whichever phone took them.
 
 ## Batch sync contract
 

@@ -3,8 +3,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from '../screens/HomeScreen';
+import ProductsScreen from '../screens/ProductsScreen';
 import PendingScreen from '../screens/PendingScreen';
 import DashboardScreen from '../screens/DashboardScreen';
+import ProductFormScreen from '../screens/ProductFormScreen';
 import EditSaleScreen from '../screens/EditSaleScreen';
 import { colors, typography } from '../theme';
 
@@ -13,6 +15,7 @@ const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
   Home: ['home', 'home-outline'],
+  Products: ['pricetag', 'pricetag-outline'],
   Pending: ['cash', 'cash-outline'],
   Dashboard: ['stats-chart', 'stats-chart-outline'],
 };
@@ -46,6 +49,11 @@ function MainTabs() {
         options={{ tabBarIcon: tabIcon('Home') }}
       />
       <Tab.Screen
+        name="Products"
+        component={ProductsScreen}
+        options={{ tabBarIcon: tabIcon('Products') }}
+      />
+      <Tab.Screen
         name="Pending"
         component={PendingScreen}
         options={{ tabBarIcon: tabIcon('Pending') }}
@@ -66,6 +74,11 @@ export function RootNavigator() {
       <Stack.Screen
         name="EditSale"
         component={EditSaleScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="EditProduct"
+        component={ProductFormScreen}
         options={{ presentation: 'modal' }}
       />
     </Stack.Navigator>

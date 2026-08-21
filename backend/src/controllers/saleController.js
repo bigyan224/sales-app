@@ -38,6 +38,10 @@ export function parseSalePayload(body) {
       ? body.syncStatus
       : 'synced';
 
+  const productIds = Array.isArray(body.productIds)
+    ? body.productIds.map((v) => String(v)).filter((v) => v).slice(0, 50)
+    : [];
+
   return {
     id,
     bsDate: body.bsDate,
@@ -46,6 +50,7 @@ export function parseSalePayload(body) {
     salesAmount: body.salesAmount,
     profit: toNullableNumber(body.profit),
     paymentStatus: body.paymentStatus === 'pending' ? 'pending' : 'paid',
+    productIds,
     createdAt: parseIsoOrNull(body.createdAt) ?? now,
     updatedAt: parseIsoOrNull(body.updatedAt) ?? now,
     syncStatus,

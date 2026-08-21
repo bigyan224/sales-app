@@ -5,10 +5,13 @@ import { bsDateString, bsToAdString, parseBsDateString, todayBs } from '../servi
 import { parseMoney } from '../utils/format';
 import { BsDateField } from './BsDateField';
 import { Button } from './Button';
+import { SaleItemInput } from './SaleItemInput';
 import { TextField } from './TextField';
+import { useProducts } from '../hooks/useProducts';
 
 /** Shared create/edit form used by Home and the Edit Sale screen. */
 export function SaleForm({ initial, onSubmit, submitLabel = 'Save Sale' }) {
+  const { products } = useProducts();
   const [bs, setBs] = useState(() =>
     initial ? parseBsDateString(initial.bsDate) ?? todayBs() : todayBs(),
   );
@@ -16,10 +19,21 @@ export function SaleForm({ initial, onSubmit, submitLabel = 'Save Sale' }) {
   const [amount, setAmount] = useState(initial ? String(initial.salesAmount) : '');
   const [profit, setProfit] = useState(initial?.profit != null ? String(initial.profit) : '');
   const [paymentStatus, setPaymentStatus] = useState(initial?.paymentStatus ?? 'paid');
+  const [selectedIds, setSelectedIds] = useState(() =>
+    Array.isArray(initial?.productIds) ? initial.productIds : [],
+  );
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const isCredit = paymentStatus === 'pending';
+
+  const handleLink = (id) => {
+    setSelectedIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
+  };
+
+  const handleUnlink = (id) => {
+    setSelectedIds((ids) => ids.filter((x) => x !== id));
+  };
 
   const handleSubmit = async () => {
     const salesAmount = parseMoney(amount);
@@ -32,6 +46,8 @@ export function SaleForm({ initial, onSubmit, submitLabel = 'Save Sale' }) {
       return;
     }
     const profitValue = parseMoney(profit);
+    // Only keep links to products that still exist.
+    const productIds = selectedIds.filter((id) => products.some((p) => p.id === id));
 
     setError(null);
     setSaving(true);
@@ -43,6 +59,7 @@ export function SaleForm({ initial, onSubmit, submitLabel = 'Save Sale' }) {
         salesAmount,
         profit: profitValue,
         paymentStatus,
+        productIds,
       };
       await onSubmit(input);
       if (!initial) {
@@ -51,6 +68,7 @@ export function SaleForm({ initial, onSubmit, submitLabel = 'Save Sale' }) {
         setAmount('');
         setProfit('');
         setPaymentStatus('paid');
+        setSelectedIds([]);
         setBs(todayBs());
       }
     } finally {
@@ -91,12 +109,18 @@ export function SaleForm({ initial, onSubmit, submitLabel = 'Save Sale' }) {
         </Text>
       ) : null}
 
-      <TextField
-        label={isCredit ? 'Customer name + item' : 'Title (optional)'}
+      <SaleItemInput
+        label={isCredit ? 'Customer name + items' : 'Title (optional)'}
         value={title}
         onChangeText={setTitle}
-        placeholder={isCredit ? 'e.g. Ram — 2 sacks of rice' : 'e.g. Customer name or item'}
+        placeholder={
+          isCredit ? 'e.g. Ram — Lota, Agarbatti…' : 'Type item or customer name…'
+        }
         inputProps={{ autoCapitalize: 'sentences' }}
+        products={products}
+        selectedIds={selectedIds}
+        onLink={handleLink}
+        onUnlink={handleUnlink}
       />
 
       <TextField

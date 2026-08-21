@@ -7,8 +7,18 @@
  * iOS simulator    -> `http://localhost:4000/api`
  */
 export const API_BASE_URL = 'https://sales-app-s0cu.onrender.com/api';
+// export const API_BASE_URL = 'http://192.168.1.67:4000/api';
 
 /** Background auto-sync interval (3 hours). */
 export const SYNC_INTERVAL_MS = 3 * 60 * 60 * 1000;
 
 export const PULL_LIMIT = 5000;
+
+/**
+ * Cloudinary direct upload for optional product photos — no backend involved.
+ *
+ * Uses the unsigned preset "products" (asset folder: "items"). Leave either
+ * value empty to keep product photos stored locally on each phone.
+ */
+export const CLOUDINARY_CLOUD_NAME = 'bnxvixiu';
+export const CLOUDINARY_UPLOAD_PRESET = 'products';

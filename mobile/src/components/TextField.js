@@ -17,6 +17,7 @@ export function TextField({
   error,
   autoFocus,
   inputProps,
+  inputRef,
 }) {
   return (
     <View style={styles.container}>
@@ -24,6 +25,7 @@ export function TextField({
       <View style={[styles.inputRow, error ? styles.inputRowError : null]}>
         {prefix ? <Text style={styles.prefix}>{prefix}</Text> : null}
         <TextInput
+          ref={inputRef}
           style={[styles.input, prefix ? styles.inputWithPrefix : null]}
           value={value}
           onChangeText={onChangeText}

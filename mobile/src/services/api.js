@@ -22,6 +22,20 @@ export const api = {
     return data;
   },
 
+  /** Pushes local product changes (edits + delete tombstones) to the server. */
+  async pushProductBatch(products) {
+    const { data } = await client.post('/products/batch-sync', { products });
+    return data.results;
+  },
+
+  /** Pulls products updated after `since` (null = everything). */
+  async fetchRemoteProducts(since) {
+    const { data } = await client.get('/products', {
+      params: { since: since ?? undefined, limit: PULL_LIMIT },
+    });
+    return data;
+  },
+
   /** Reports whether the backend is reachable. */
   async ping() {
     try {

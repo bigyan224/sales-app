@@ -29,6 +29,7 @@ export async function initDatabase() {
       sales_amount REAL NOT NULL,
       profit REAL,
       payment_status TEXT NOT NULL DEFAULT 'paid',
+      product_ids TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       sync_status TEXT NOT NULL DEFAULT 'pending',
@@ -40,9 +41,27 @@ export async function initDatabase() {
       value TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS products (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      category TEXT,
+      unit TEXT,
+      price REAL NOT NULL,
+      notes TEXT,
+      image_url TEXT,
+      local_image_uri TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      sync_status TEXT NOT NULL DEFAULT 'pending',
+      deleted_at TEXT
+    );
+
     CREATE INDEX IF NOT EXISTS idx_sales_bs_date ON sales (bs_date);
     CREATE INDEX IF NOT EXISTS idx_sales_updated_at ON sales (updated_at);
     CREATE INDEX IF NOT EXISTS idx_sales_sync_status ON sales (sync_status);
+    CREATE INDEX IF NOT EXISTS idx_products_name ON products (name);
+    CREATE INDEX IF NOT EXISTS idx_products_updated_at ON products (updated_at);
+    CREATE INDEX IF NOT EXISTS idx_products_sync_status ON products (sync_status);
   `);
 
   // Migration for databases created before the credit feature.
@@ -51,5 +70,9 @@ export async function initDatabase() {
     await db.execAsync(
       "ALTER TABLE sales ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'paid'",
     );
+  }
+  // Migration for databases created before sale item tagging.
+  if (!columns.some((c) => c.name === 'product_ids')) {
+    await db.execAsync('ALTER TABLE sales ADD COLUMN product_ids TEXT');
   }
 }

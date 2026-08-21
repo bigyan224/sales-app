@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import { CORS_ORIGIN } from './config/env.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
+import productRoutes from './routes/productRoutes.js';
 import saleRoutes from './routes/saleRoutes.js';
 
 export function createApp() {
@@ -16,6 +17,7 @@ export function createApp() {
   });
 
   app.use('/api', saleRoutes);
+  app.use('/api', productRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

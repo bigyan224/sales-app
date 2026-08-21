@@ -8,19 +8,24 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SaleForm } from '../components/SaleForm';
-import { useSales } from '../hooks/useSales';
+import { ProductForm } from '../components/ProductForm';
+import { useProducts } from '../hooks/useProducts';
 import { colors, radii, spacing, typography } from '../theme';
 
-/** Modal screen for editing an existing sale. */
-export default function EditSaleScreen({ navigation, route }) {
+/**
+ * Modal screen for adding/editing products. When adding, the form stays open
+ * after each save (fast-seed mode) so many items can be entered in a row —
+ * close with ✕ when done.
+ */
+export default function ProductFormScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
-  const { sales, updateSale, loading } = useSales();
-  const sale = sales.find((s) => s.id === route.params.saleId);
+  const { products, addProduct, updateProduct, loading } = useProducts();
+  const productId = route.params?.productId;
+  const product = productId ? products.find((p) => p.id === productId) : null;
 
   const close = () => navigation.goBack();
 
-  if (loading || !sale) {
+  if (productId && (loading || !product)) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator color={colors.primary} />
@@ -28,36 +33,39 @@ export default function EditSaleScreen({ navigation, route }) {
     );
   }
 
-  const initial = {
-    bsDate: sale.bsDate,
-    adDate: sale.adDate,
-    title: sale.title ?? '',
-    salesAmount: sale.salesAmount,
-    profit: sale.profit,
-    paymentStatus: sale.paymentStatus ?? 'paid',
-    productIds: Array.isArray(sale.productIds) ? sale.productIds : [],
-  };
+  const initial = product
+    ? {
+        name: product.name,
+        category: product.category,
+        unit: product.unit,
+        price: product.price,
+        notes: product.notes ?? '',
+        localImageUri: product.localImageUri,
+        imageUrl: product.imageUrl,
+      }
+    : null;
 
   return (
     <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Edit Sale</Text>
+        <Text style={styles.title}>{product ? 'Edit Product' : 'Add Product'}</Text>
         <Pressable onPress={close} style={styles.closeButton} accessibilityLabel="Close">
           <Text style={styles.closeText}>✕</Text>
         </Pressable>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
-          <SaleForm
+          <ProductForm
             initial={initial}
-            submitLabel="Save Changes"
+            submitLabel={product ? 'Save Changes' : 'Save Product'}
             onSubmit={async (input) => {
-              await updateSale(sale.id, input);
-              close();
+              if (product) {
+                await updateProduct(product.id, input);
+                close();
+              } else {
+                await addProduct(input);
+              }
             }}
           />
         </View>

@@ -38,6 +38,7 @@ export const useSalesStore = create((set, get) => ({
       salesAmount: input.salesAmount,
       profit: input.profit ?? null,
       paymentStatus: input.paymentStatus ?? 'paid',
+      productIds: Array.isArray(input.productIds) ? input.productIds : [],
       createdAt: now,
       updatedAt: now,
       syncStatus: 'pending',
@@ -61,6 +62,9 @@ export const useSalesStore = create((set, get) => ({
       salesAmount: input.salesAmount,
       profit: input.profit ?? null,
       paymentStatus: input.paymentStatus ?? existing.paymentStatus ?? 'paid',
+      productIds: Array.isArray(input.productIds)
+        ? input.productIds
+        : (existing.productIds ?? []),
       updatedAt: now,
       syncStatus: 'pending',
       deletedAt: null,

@@ -42,17 +42,33 @@ export const API_BASE_URL = 'http://192.168.1.100:4000/api';
 ## Screens
 
 - **Home** — quick-add a sale, today's totals, sync status.
+- **Products** — price lookup for every item in the shop. Search by name or
+  category; each product has an optional photo, unit (piece/kg/…) and notes.
+  Adding products has a fast-seed flow: after each save the form clears and
+  refocuses so a whole shelf can be entered back-to-back.
 - **Pending** — all credit sales awaiting payment, with total outstanding and a
   "Mark Paid" button to settle each one.
 - **Dashboard** — monthly BS calendar heatmap + search. Shows month analytics
   (daily bar chart, sales, profit, outstanding, collected) by default; tap a
   date circle to drill into that day's entries with its own stats. All computed
   offline from SQLite.
-- **Edit Sale** — modal opened from Home / Pending / Dashboard.
+- **Edit Sale / Add Product** — modals opened from the lists.
 
 Every sale is either **Cash** (default) or **Credit**. Credit sales show a
 badge, appear in the Pending tab, and are counted as Outstanding until marked
-paid. The `title` field holds the customer name + item (e.g. "Ram — 2 sacks").
+paid. The `title` field holds the customer name + items (e.g. "Ram — Lota,
+Agarbatti").
+
+While typing a sale title, matching products appear as suggestions — tapping
+one inserts its name into the text (the price is never auto-applied) and links
+the product to the sale (`productIds`), enabling per-item sales analytics
+later. Multiple items and free text can be mixed freely; linked items show as
+removable chips under the field.
+
+Product photos are optional: shoot with the camera or pick from the gallery,
+saved on-device instantly, then uploaded straight to Cloudinary (unsigned
+preset — no backend involved) during the next successful sync. Configure
+`CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_UPLOAD_PRESET` in `src/config.js`.
 
 All data is permanently stored in MongoDB. To export, query the `sales`
 collection directly in MongoDB Atlas / Compass.
@@ -70,9 +86,9 @@ collection directly in MongoDB Atlas / Compass.
 App.js                 entry (DB init → navigation → auto-sync)
 src/
   components/          reusable UI (buttons, fields, BS date picker, charts…)
-  screens/             Home, Pending, Dashboard, Edit Sale
-  services/            sync engine, HTTP client, Nepali dates
-  db/                  SQLite connection + repository (all queries live here)
+  screens/             Home, Products, Pending, Dashboard, form modals
+  services/            sync engine, HTTP client, Nepali dates, image uploads
+  db/                  SQLite connection + repositories (all queries live here)
   state/               Zustand stores (sales + sync status)
   hooks/               useSales, useAutoSync
   utils/               formatting helpers
