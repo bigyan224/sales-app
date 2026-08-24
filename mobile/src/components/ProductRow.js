@@ -1,11 +1,25 @@
-import React from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  Alert,
+  Image,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../theme';
 import { formatMoney } from '../utils/format';
 
-/** A product row in the Products list: photo, name, category/unit and price. */
+/**
+ * A product row in the Products list. Tapping the item opens its photo
+ * full-screen for a clear look; editing happens only through the pencil
+ * button.
+ */
 export function ProductRow({ product, onEdit, onDelete }) {
+  const [viewerOpen, setViewerOpen] = useState(false);
+
   const imageSource = product.localImageUri
     ? { uri: product.localImageUri }
     : product.imageUrl
@@ -28,49 +42,86 @@ export function ProductRow({ product, onEdit, onDelete }) {
   };
 
   return (
-    <View style={styles.card}>
-      <Pressable style={styles.main} onPress={() => onEdit(product)}>
-        {imageSource ? (
-          <Image source={imageSource} style={styles.thumb} />
-        ) : (
-          <View style={[styles.thumb, styles.thumbEmpty]}>
-            <Ionicons name="image-outline" size={22} color={colors.textMuted} />
-          </View>
-        )}
-        <View style={styles.info}>
-          <Text style={styles.name} numberOfLines={2}>
-            {product.name}
-          </Text>
-          {product.category || product.unit ? (
-            <Text style={styles.meta} numberOfLines={1}>
-              {[product.category, product.unit].filter(Boolean).join(' • ')}
+    <>
+      <View style={styles.card}>
+        <Pressable
+          style={styles.main}
+          onPress={() => imageSource && setViewerOpen(true)}
+          accessibilityRole={imageSource ? 'imagebutton' : 'none'}
+          accessibilityLabel={
+            imageSource ? `View photo of ${product.name}` : product.name
+          }
+        >
+          {imageSource ? (
+            <Image source={imageSource} style={styles.thumb} />
+          ) : (
+            <View style={[styles.thumb, styles.thumbEmpty]}>
+              <Ionicons name="image-outline" size={22} color={colors.textMuted} />
+            </View>
+          )}
+          <View style={styles.info}>
+            <Text style={styles.name} numberOfLines={2}>
+              {product.name}
             </Text>
-          ) : null}
-        </View>
-        <View style={styles.priceBox}>
-          <Text style={styles.price}>{formatMoney(product.price)}</Text>
-          {product.unit ? <Text style={styles.unit}>/{product.unit}</Text> : null}
-        </View>
-      </Pressable>
-      <View style={styles.actions}>
-        <Pressable
-          style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
-          onPress={() => onEdit(product)}
-          accessibilityRole="button"
-          accessibilityLabel={`Edit ${product.name}`}
-        >
-          <Ionicons name="pencil" size={18} color={colors.primaryDark} />
+            {product.category || product.unit ? (
+              <Text style={styles.meta} numberOfLines={1}>
+                {[product.category, product.unit].filter(Boolean).join(' • ')}
+              </Text>
+            ) : null}
+          </View>
+          <View style={styles.priceBox}>
+            <Text style={styles.price}>{formatMoney(product.price)}</Text>
+            {product.unit ? <Text style={styles.unit}>/{product.unit}</Text> : null}
+          </View>
         </Pressable>
-        <Pressable
-          style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
-          onPress={confirmDelete}
-          accessibilityRole="button"
-          accessibilityLabel={`Delete ${product.name}`}
-        >
-          <Ionicons name="trash-outline" size={18} color={colors.danger} />
-        </Pressable>
+        <View style={styles.actions}>
+          <Pressable
+            style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+            onPress={() => onEdit(product)}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit ${product.name}`}
+          >
+            <Ionicons name="pencil" size={18} color={colors.primaryDark} />
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.actionButton, pressed && styles.pressed]}
+            onPress={confirmDelete}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${product.name}`}
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.danger} />
+          </Pressable>
+        </View>
       </View>
-    </View>
+
+      <Modal
+        visible={viewerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setViewerOpen(false)}
+      >
+        <Pressable
+          style={styles.viewerBackdrop}
+          onPress={() => setViewerOpen(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close photo"
+        >
+          {imageSource ? (
+            <Image
+              source={imageSource}
+              style={styles.viewerImage}
+              resizeMode="contain"
+            />
+          ) : null}
+          <Text style={styles.viewerName}>{product.name}</Text>
+          <Text style={styles.viewerPrice}>
+            {formatMoney(product.price)}
+            {product.unit ? ` /${product.unit}` : ''}
+          </Text>
+          <Text style={styles.viewerHint}>Tap anywhere to close</Text>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
@@ -142,5 +193,34 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.6,
+  },
+  viewerBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.94)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  viewerImage: {
+    width: '100%',
+    height: '68%',
+  },
+  viewerName: {
+    fontSize: typography.section,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginTop: spacing.lg,
+  },
+  viewerPrice: {
+    fontSize: typography.body,
+    fontWeight: '700',
+    color: '#7EB3FF',
+    marginTop: spacing.xs,
+  },
+  viewerHint: {
+    fontSize: typography.small,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginTop: spacing.xl,
   },
 });

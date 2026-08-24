@@ -13,13 +13,19 @@ import { flushPendingProductUploads } from './imageService';
  *   setLastSyncAt: (iso: string) => void,
  *   setPendingCount: (count: number) => void,
  *   isOnline: () => boolean,
+ *   probeOnline?: () => Promise<boolean>,
  * }} SyncStoreUpdater
  */
+
+/** Backoff schedule for automatic retries after a failed/offline sync. */
+const RETRY_DELAYS_MS = [15000, 30000, 60000, 120000];
 
 class SyncService {
   constructor() {
     this.running = false;
     this.updater = null;
+    this.retryTimer = null;
+    this.retryAttempt = 0;
   }
 
   bind(updater) {
@@ -30,15 +36,49 @@ class SyncService {
     return this.running;
   }
 
+  /**
+   * Failed/offline syncs retry automatically with backoff. This covers Render
+   * free-tier cold-start timeouts and reconnects the OS never announced —
+   * without it, records created offline could stay unsynced indefinitely.
+   */
+  scheduleRetry() {
+    if (this.retryTimer) return;
+    const delay =
+      RETRY_DELAYS_MS[Math.min(this.retryAttempt, RETRY_DELAYS_MS.length - 1)];
+    this.retryAttempt += 1;
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+      void this.syncNow();
+    }, delay);
+  }
+
+  clearRetry() {
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+    this.retryAttempt = 0;
+  }
+
   /** Runs a full push-then-pull sync. Safe to call concurrently/while offline. */
   async syncNow() {
     const updater = this.updater;
     if (!updater || this.running) return;
 
     if (!updater.isOnline()) {
-      updater.setStatus('offline');
-      await this.refreshPendingCount();
-      return;
+      // Never trust a stale offline flag: ask the OS for the truth. If we were
+      // wrong (missed reconnect event), continue with the sync instead of
+      // silently dropping it.
+      const actuallyOnline =
+        typeof updater.probeOnline === 'function'
+          ? await updater.probeOnline()
+          : false;
+      if (!actuallyOnline) {
+        updater.setStatus('offline');
+        await this.refreshPendingCount();
+        this.scheduleRetry();
+        return;
+      }
     }
 
     this.running = true;
@@ -89,10 +129,12 @@ class SyncService {
       }
 
       updater.setStatus('synced');
+      this.clearRetry();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sync failed';
       updater.setError(message);
       updater.setStatus('error');
+      this.scheduleRetry();
     } finally {
       this.running = false;
       await this.refreshPendingCount();

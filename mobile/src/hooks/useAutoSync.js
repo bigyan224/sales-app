@@ -15,24 +15,26 @@ const isOnline = (state) =>
  * - when internet reconnects
  * - when the app comes to the foreground
  * - on a background timer every few hours
+ *
+ * Every trigger re-checks actual connectivity with the OS first — a stale
+ * offline flag must never cause a sync to be skipped silently.
  */
 export function useAutoSync() {
   useEffect(() => {
     const refreshAndSync = () => {
+      Network.getNetworkStateAsync()
+        .then((state) => {
+          useSyncStore.getState().setOnline(isOnline(state));
+          void syncService.syncNow();
+        })
+        .catch(() => {
+          // Connectivity unknown — syncNow probes again before giving up.
+          void syncService.syncNow();
+        });
       void useSalesStore.getState().refresh();
-      void syncService.syncNow();
     };
 
     refreshAndSync();
-
-    // Seed connection state before the first sync.
-    Network.getNetworkStateAsync()
-      .then((state) => {
-        const online = isOnline(state);
-        useSyncStore.getState().setOnline(online);
-        if (online) void syncService.syncNow();
-      })
-      .catch(() => useSyncStore.getState().setOnline(true));
 
     const subscription = Network.addNetworkStateListener((state) => {
       const online = isOnline(state);

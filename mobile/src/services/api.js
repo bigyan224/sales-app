@@ -3,7 +3,9 @@ import { API_BASE_URL, PULL_LIMIT } from '../config';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  // Generous enough to survive a cold-starting free-tier server (~30-50 s);
+  // anything slower is handled by the sync engine's retry backoff.
+  timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 });
 
