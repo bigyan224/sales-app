@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import * as Network from 'expo-network';
 import { SYNC_INTERVAL_MS } from '../config';
 import { syncService } from '../services/syncService';
+import { useProductsStore } from '../state/productStore';
 import { useSalesStore } from '../state/salesStore';
 import { useSyncStore } from '../state/syncStore';
 
@@ -32,6 +33,7 @@ export function useAutoSync() {
           void syncService.syncNow();
         });
       void useSalesStore.getState().refresh();
+      void useProductsStore.getState().refresh();
     };
 
     refreshAndSync();

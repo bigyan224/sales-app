@@ -24,6 +24,7 @@ export function ProductForm({ initial, onSubmit, submitLabel = 'Save Product' })
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [localImageUri, setLocalImageUri] = useState(initial?.localImageUri ?? null);
   const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? null);
+  const [cachedImageUri] = useState(initial?.cachedImageUri ?? null);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const nameRef = useRef(null);
@@ -87,7 +88,7 @@ export function ProductForm({ initial, onSubmit, submitLabel = 'Save Product' })
     }
   };
 
-  const shownImage = localImageUri ?? imageUrl;
+  const shownImage = localImageUri ?? cachedImageUri ?? imageUrl;
 
   return (
     <View>

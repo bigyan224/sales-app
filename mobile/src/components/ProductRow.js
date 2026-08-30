@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { getProductImageUri } from '../services/productImageCache';
 import { colors, radii, spacing, typography } from '../theme';
 import { formatMoney } from '../utils/format';
 
@@ -20,11 +21,8 @@ import { formatMoney } from '../utils/format';
 export function ProductRow({ product, onEdit, onDelete }) {
   const [viewerOpen, setViewerOpen] = useState(false);
 
-  const imageSource = product.localImageUri
-    ? { uri: product.localImageUri }
-    : product.imageUrl
-      ? { uri: product.imageUrl }
-      : null;
+  const imageUri = getProductImageUri(product);
+  const imageSource = imageUri ? { uri: imageUri } : null;
 
   const confirmDelete = () => {
     Alert.alert(

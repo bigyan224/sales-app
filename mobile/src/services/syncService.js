@@ -2,6 +2,7 @@ import { productRepository } from '../db/productRepository';
 import { saleRepository } from '../db/saleRepository';
 import { api } from './api';
 import { flushPendingProductUploads } from './imageService';
+import { cacheRemoteProductImages } from './productImageCache';
 
 /**
  * Callbacks the sync store registers so the service can report progress.
@@ -177,6 +178,18 @@ async function syncProducts() {
   const remote = await api.fetchRemoteProducts(since);
   await productRepository.applyRemoteProducts(remote.products ?? []);
   await productRepository.setLastSyncAt(new Date().toISOString());
+
+  // Cache remote images for offline viewing. Never fails the sync.
+  try {
+    await cacheRemoteProductImages();
+    // Refresh UI so cachedImageUri is visible immediately offline.
+    try {
+      const { useProductsStore } = await import('../state/productStore.js');
+      await useProductsStore.getState().refresh();
+    } catch {}
+  } catch (err) {
+    console.warn('[sync] image cache failed:', err?.message ?? err);
+  }
 }
 
 export const syncService = new SyncService();
