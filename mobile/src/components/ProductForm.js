@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from './Button';
 import { TextField } from './TextField';
@@ -82,6 +83,7 @@ export function ProductForm({ initial, onSubmit, submitLabel = 'Save Product' })
         setNotes('');
         setLocalImageUri(null);
         setImageUrl(null);
+        setCachedImageUri(null);
         setError(null);
         if (nameRef.current) nameRef.current.focus();
       }
@@ -97,7 +99,7 @@ export function ProductForm({ initial, onSubmit, submitLabel = 'Save Product' })
       <View style={styles.imageRow}>
         {shownImage ? (
           <Pressable onPress={handleRemoveImage} accessibilityLabel="Remove photo">
-            <Image source={{ uri: shownImage }} style={styles.image} />
+            <Image source={{ uri: shownImage }} style={styles.image} contentFit="cover" cachePolicy="memory-disk" transition={100} />
             <View style={styles.imageRemoveBadge}>
               <Ionicons name="close" size={16} color="#FFFFFF" />
             </View>

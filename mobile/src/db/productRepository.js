@@ -223,10 +223,11 @@ export async function applyRemoteProducts(remote) {
         continue;
       }
       // Preserve the device-local photo path and cached image across pull upserts.
+      // Keep old cached file even if imageUrl changed - it will be overwritten after successful download, so offline never shows missing image
       const localImageUri = local?.localImageUri ?? null;
       let cachedImageUri = local?.cachedImageUri ?? null;
-      // If remote image changed, invalidate cached file (will be re-downloaded).
-      if (local && local.imageUrl !== remoteProduct.imageUrl) {
+      // Only clear cached if remote image was removed (null), not when it changes to a new URL
+      if (local && local.imageUrl && !remoteProduct.imageUrl) {
         cachedImageUri = null;
       }
       await upsertProduct({

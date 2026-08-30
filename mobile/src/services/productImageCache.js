@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { productRepository } from '../db/productRepository';
 
 const CACHE_DIR = `${FileSystem.documentDirectory}product-images/`;
@@ -51,18 +51,37 @@ async function cacheOne(product) {
   try {
     await ensureCacheDir();
     const target = `${CACHE_DIR}${fileNameFor(product)}`;
-    const existing = await FileSystem.getInfoAsync(target);
-    // If file already exists and DB already points to it, skip download.
-    // But we still need to ensure DB has correct uri (caller checks cached_image_uri IS NULL).
-    const download = await FileSystem.downloadAsync(product.imageUrl, target);
+    // If already cached and file exists with valid size, just ensure DB points to it
+    if (product.cachedImageUri) {
+      const info = await FileSystem.getInfoAsync(product.cachedImageUri);
+      if (info.exists && info.size > 100) {
+        return true;
+      }
+    }
+    const temp = `${target}.tmp`;
+    try {
+      await FileSystem.deleteAsync(temp, { idempotent: true });
+    } catch {}
+    const download = await FileSystem.downloadAsync(product.imageUrl, temp);
     if (download.status !== 200) {
-      // Cleanup failed download
       try {
-        await FileSystem.deleteAsync(target, { idempotent: true });
+        await FileSystem.deleteAsync(temp, { idempotent: true });
       } catch {}
       return false;
     }
-    await productRepository.setCachedImageUri(product.id, download.uri);
+    const tempInfo = await FileSystem.getInfoAsync(temp);
+    if (!tempInfo.exists || (tempInfo.size !== undefined && tempInfo.size < 100)) {
+      try {
+        await FileSystem.deleteAsync(temp, { idempotent: true });
+      } catch {}
+      return false;
+    }
+    // Move temp to final location (atomic)
+    try {
+      await FileSystem.deleteAsync(target, { idempotent: true });
+    } catch {}
+    await FileSystem.moveAsync({ from: temp, to: target });
+    await productRepository.setCachedImageUri(product.id, target);
     return true;
   } catch (err) {
     // Network offline or server error — keep as pending for next sync.
@@ -79,13 +98,18 @@ async function cacheOne(product) {
 export async function cacheRemoteProductImages() {
   try {
     await ensureCacheDir();
-    // Verify already-cached files still exist (user may have cleared storage).
+    // Verify already-cached files still exist and are valid (user may have cleared storage or download was interrupted).
     const allActive = await productRepository.getAllActiveProducts();
     for (const p of allActive) {
       if (p.cachedImageUri && p.imageUrl) {
         const info = await FileSystem.getInfoAsync(p.cachedImageUri);
-        if (!info.exists) {
+        if (!info.exists || (info.size !== undefined && info.size < 100)) {
           await productRepository.clearCachedImageUri(p.id);
+          if (info.exists) {
+            try {
+              await FileSystem.deleteAsync(p.cachedImageUri, { idempotent: true });
+            } catch {}
+          }
         }
       } else if (p.cachedImageUri && !p.imageUrl) {
         // Remote image removed - clean orphan cache
@@ -121,6 +145,27 @@ export function getProductImageUri(product) {
 }
 
 /**
+ * Ensures a single product's image is cached - can be called from UI when product has imageUrl but no cached file.
+ * Deduplicates concurrent downloads.
+ */
+const _inProgress = new Set();
+export async function ensureImageCached(product) {
+  if (!product?.imageUrl || product.cachedImageUri || product.localImageUri) return;
+  if (_inProgress.has(product.id)) return;
+  _inProgress.add(product.id);
+  try {
+    await cacheOne(product);
+    // Refresh store so UI picks up cachedImageUri without needing full sync
+    try {
+      const { useProductsStore } = await import('../state/productStore.js');
+      await useProductsStore.getState().refresh();
+    } catch {}
+  } finally {
+    _inProgress.delete(product.id);
+  }
+}
+
+/**
  * Removes the cached file for a product (called when product is deleted or image removed).
  */
 export async function deleteCachedImage(productId, cachedUri) {
@@ -132,3 +177,5 @@ export async function deleteCachedImage(productId, cachedUri) {
     await productRepository.clearCachedImageUri(productId);
   } catch {}
 }
+
+export { cacheOne as cacheSingleProductImage };

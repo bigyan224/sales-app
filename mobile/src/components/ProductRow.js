@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
-  Image,
   Modal,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { getProductImageUri } from '../services/productImageCache';
+import { ensureImageCached, getProductImageUri } from '../services/productImageCache';
 import { colors, radii, spacing, typography } from '../theme';
 import { formatMoney } from '../utils/format';
 
@@ -18,11 +18,19 @@ import { formatMoney } from '../utils/format';
  * full-screen for a clear look; editing happens only through the pencil
  * button.
  */
-export function ProductRow({ product, onEdit, onDelete }) {
+function ProductRowInner({ product, onEdit, onDelete }) {
   const [viewerOpen, setViewerOpen] = useState(false);
 
   const imageUri = getProductImageUri(product);
   const imageSource = imageUri ? { uri: imageUri } : null;
+
+  // On-demand caching: if product has remote image but no local cached file, download in background
+  // This ensures scrolling with internet also populates FileSystem cache for offline, and fixes missing images after restart
+  useEffect(() => {
+    if (product.imageUrl && !product.cachedImageUri && !product.localImageUri) {
+      void ensureImageCached(product);
+    }
+  }, [product.id, product.imageUrl, product.cachedImageUri, product.localImageUri]);
 
   const confirmDelete = () => {
     Alert.alert(
@@ -51,7 +59,14 @@ export function ProductRow({ product, onEdit, onDelete }) {
           }
         >
           {imageSource ? (
-            <Image source={imageSource} style={styles.thumb} />
+            <Image
+              source={imageSource}
+              style={styles.thumb}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={100}
+              placeholder={{ blurhash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj' }}
+            />
           ) : (
             <View style={[styles.thumb, styles.thumbEmpty]}>
               <Ionicons name="image-outline" size={22} color={colors.textMuted} />
@@ -108,7 +123,9 @@ export function ProductRow({ product, onEdit, onDelete }) {
             <Image
               source={imageSource}
               style={styles.viewerImage}
-              resizeMode="contain"
+              contentFit="contain"
+              cachePolicy="memory-disk"
+              transition={100}
             />
           ) : null}
           <Text style={styles.viewerName}>{product.name}</Text>
@@ -122,6 +139,8 @@ export function ProductRow({ product, onEdit, onDelete }) {
     </>
   );
 }
+
+export const ProductRow = React.memo(ProductRowInner);
 
 const styles = StyleSheet.create({
   card: {
