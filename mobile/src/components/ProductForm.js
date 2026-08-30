@@ -24,7 +24,7 @@ export function ProductForm({ initial, onSubmit, submitLabel = 'Save Product' })
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [localImageUri, setLocalImageUri] = useState(initial?.localImageUri ?? null);
   const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? null);
-  const [cachedImageUri] = useState(initial?.cachedImageUri ?? null);
+  const [cachedImageUri, setCachedImageUri] = useState(initial?.cachedImageUri ?? null);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const nameRef = useRef(null);
@@ -34,6 +34,7 @@ export function ProductForm({ initial, onSubmit, submitLabel = 'Save Product' })
     if (!uri) return;
     setLocalImageUri(uri);
     setImageUrl(null); // force a fresh upload of the replacement photo
+    setCachedImageUri(null);
   };
 
   const handleRemoveImage = () => {
@@ -45,6 +46,7 @@ export function ProductForm({ initial, onSubmit, submitLabel = 'Save Product' })
         onPress: () => {
           setLocalImageUri(null);
           setImageUrl(null);
+          setCachedImageUri(null);
         },
       },
     ]);

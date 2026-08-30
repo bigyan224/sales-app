@@ -78,9 +78,8 @@ async function cacheOne(product) {
  */
 export async function cacheRemoteProductImages() {
   try {
-    const pending = await productRepository.getProductsNeedingImageCache();
-    if (pending.length === 0) return;
-    // Also verify that already-cached files still exist (user may have cleared storage).
+    await ensureCacheDir();
+    // Verify already-cached files still exist (user may have cleared storage).
     const allActive = await productRepository.getAllActiveProducts();
     for (const p of allActive) {
       if (p.cachedImageUri && p.imageUrl) {
@@ -88,10 +87,16 @@ export async function cacheRemoteProductImages() {
         if (!info.exists) {
           await productRepository.clearCachedImageUri(p.id);
         }
+      } else if (p.cachedImageUri && !p.imageUrl) {
+        // Remote image removed - clean orphan cache
+        try {
+          await FileSystem.deleteAsync(p.cachedImageUri, { idempotent: true });
+        } catch {}
+        await productRepository.clearCachedImageUri(p.id);
       }
     }
-    // Re-fetch pending after possible clears
     const toCache = await productRepository.getProductsNeedingImageCache();
+    if (toCache.length === 0) return;
     for (const product of toCache) {
       // Sequential to be gentle on Render free tier + mobile data
       // eslint-disable-next-line no-await-in-loop
