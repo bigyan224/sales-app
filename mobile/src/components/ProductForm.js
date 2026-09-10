@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from './Button';
 import { TextField } from './TextField';
@@ -24,6 +25,7 @@ export function ProductForm({ initial, onSubmit, submitLabel = 'Save Product' })
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [localImageUri, setLocalImageUri] = useState(initial?.localImageUri ?? null);
   const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? null);
+  const [cachedImageUri, setCachedImageUri] = useState(initial?.cachedImageUri ?? null);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const nameRef = useRef(null);
@@ -33,6 +35,7 @@ export function ProductForm({ initial, onSubmit, submitLabel = 'Save Product' })
     if (!uri) return;
     setLocalImageUri(uri);
     setImageUrl(null); // force a fresh upload of the replacement photo
+    setCachedImageUri(null);
   };
 
   const handleRemoveImage = () => {
@@ -44,6 +47,7 @@ export function ProductForm({ initial, onSubmit, submitLabel = 'Save Product' })
         onPress: () => {
           setLocalImageUri(null);
           setImageUrl(null);
+          setCachedImageUri(null);
         },
       },
     ]);
@@ -79,6 +83,7 @@ export function ProductForm({ initial, onSubmit, submitLabel = 'Save Product' })
         setNotes('');
         setLocalImageUri(null);
         setImageUrl(null);
+        setCachedImageUri(null);
         setError(null);
         if (nameRef.current) nameRef.current.focus();
       }
@@ -87,14 +92,14 @@ export function ProductForm({ initial, onSubmit, submitLabel = 'Save Product' })
     }
   };
 
-  const shownImage = localImageUri ?? imageUrl;
+  const shownImage = localImageUri ?? cachedImageUri ?? imageUrl;
 
   return (
     <View>
       <View style={styles.imageRow}>
         {shownImage ? (
           <Pressable onPress={handleRemoveImage} accessibilityLabel="Remove photo">
-            <Image source={{ uri: shownImage }} style={styles.image} />
+            <Image source={{ uri: shownImage }} style={styles.image} contentFit="cover" cachePolicy="memory-disk" transition={100} />
             <View style={styles.imageRemoveBadge}>
               <Ionicons name="close" size={16} color="#FFFFFF" />
             </View>

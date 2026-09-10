@@ -1,7 +1,7 @@
 import { getDatabase } from './database';
 
 const INSERT_COLUMNS =
-  'id, name, category, unit, price, notes, image_url, local_image_uri, created_at, updated_at, sync_status, deleted_at';
+  'id, name, category, unit, price, notes, image_url, local_image_uri, cached_image_uri, created_at, updated_at, sync_status, deleted_at';
 
 function rowToProduct(row) {
   return {
@@ -14,6 +14,7 @@ function rowToProduct(row) {
     imageUrl: row.image_url ?? null,
     // Device-local only; never sent to the server.
     localImageUri: row.local_image_uri ?? null,
+    cachedImageUri: row.cached_image_uri ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     syncStatus: row.sync_status,
@@ -31,6 +32,7 @@ function productToParams(product) {
     product.notes,
     product.imageUrl,
     product.localImageUri ?? null,
+    product.cachedImageUri ?? null,
     product.createdAt,
     product.updatedAt,
     product.syncStatus,
@@ -41,7 +43,7 @@ function productToParams(product) {
 export async function insertProduct(product) {
   const db = await getDatabase();
   await db.runAsync(
-    `INSERT INTO products (${INSERT_COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+    `INSERT INTO products (${INSERT_COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     productToParams(product),
   );
 }
@@ -50,7 +52,7 @@ export async function insertProduct(product) {
 export async function upsertProduct(product) {
   const db = await getDatabase();
   await db.runAsync(
-    `INSERT OR REPLACE INTO products (${INSERT_COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+    `INSERT OR REPLACE INTO products (${INSERT_COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     productToParams(product),
   );
 }
@@ -59,7 +61,7 @@ export async function updateProduct(product) {
   const db = await getDatabase();
   await db.runAsync(
     `UPDATE products SET name=?, category=?, unit=?, price=?, notes=?,
-     image_url=?, local_image_uri=?, created_at=?, updated_at=?, sync_status=?, deleted_at=?
+     image_url=?, local_image_uri=?, cached_image_uri=?, created_at=?, updated_at=?, sync_status=?, deleted_at=?
      WHERE id=?`,
     [
       product.name,
@@ -69,6 +71,7 @@ export async function updateProduct(product) {
       product.notes,
       product.imageUrl,
       product.localImageUri ?? null,
+      product.cachedImageUri ?? null,
       product.createdAt,
       product.updatedAt,
       product.syncStatus,
@@ -166,6 +169,28 @@ export async function setImageUrl(id, imageUrl) {
   );
 }
 
+export async function setCachedImageUri(id, cachedUri) {
+  const db = await getDatabase();
+  await db.runAsync('UPDATE products SET cached_image_uri=? WHERE id=?', [
+    cachedUri,
+    id,
+  ]);
+}
+
+export async function clearCachedImageUri(id) {
+  const db = await getDatabase();
+  await db.runAsync('UPDATE products SET cached_image_uri=NULL WHERE id=?', [id]);
+}
+
+/** Products that have a remote image but no cached file yet. */
+export async function getProductsNeedingImageCache() {
+  const db = await getDatabase();
+  const rows = await db.getAllAsync(
+    'SELECT * FROM products WHERE deleted_at IS NULL AND image_url IS NOT NULL AND cached_image_uri IS NULL',
+  );
+  return rows.map(rowToProduct);
+}
+
 export async function getLastSyncAt() {
   const db = await getDatabase();
   const row = await db.getFirstAsync(
@@ -197,11 +222,18 @@ export async function applyRemoteProducts(remote) {
       if (local && local.syncStatus !== 'synced' && local.updatedAt > remoteProduct.updatedAt) {
         continue;
       }
-      // Preserve the device-local photo path across pull upserts.
+      // Preserve the device-local photo path and cached image across pull upserts.
+      // Keep old cached file even if imageUrl changed - it will be overwritten after successful download, so offline never shows missing image
       const localImageUri = local?.localImageUri ?? null;
+      let cachedImageUri = local?.cachedImageUri ?? null;
+      // Only clear cached if remote image was removed (null), not when it changes to a new URL
+      if (local && local.imageUrl && !remoteProduct.imageUrl) {
+        cachedImageUri = null;
+      }
       await upsertProduct({
         ...remoteProduct,
         localImageUri,
+        cachedImageUri,
         syncStatus: 'synced',
         deletedAt: null,
       });
@@ -224,6 +256,9 @@ export const productRepository = {
   hardDeleteProduct,
   getProductsWithLocalImageOnly,
   setImageUrl,
+  setCachedImageUri,
+  clearCachedImageUri,
+  getProductsNeedingImageCache,
   getLastSyncAt,
   setLastSyncAt,
   applyRemoteProducts,

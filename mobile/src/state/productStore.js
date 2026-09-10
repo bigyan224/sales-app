@@ -28,6 +28,7 @@ export const useProductsStore = create((set, get) => ({
       notes: input.notes ?? null,
       imageUrl: null,
       localImageUri: input.localImageUri ?? null,
+      cachedImageUri: null,
       createdAt: now,
       updatedAt: now,
       syncStatus: 'pending',
@@ -43,6 +44,9 @@ export const useProductsStore = create((set, get) => ({
     const existing = await productRepository.getProductById(id);
     if (!existing) return;
     const now = new Date().toISOString();
+    const hasNewLocal = input.localImageUri !== undefined && input.localImageUri !== existing.localImageUri;
+    const hasNewUrl = input.imageUrl !== undefined && input.imageUrl !== existing.imageUrl;
+    const shouldClearCache = hasNewLocal || hasNewUrl || input.imageUrl === null;
     const updated = {
       ...existing,
       name: input.name.trim(),
@@ -54,6 +58,7 @@ export const useProductsStore = create((set, get) => ({
       localImageUri:
         input.localImageUri !== undefined ? input.localImageUri : existing.localImageUri,
       imageUrl: input.imageUrl !== undefined ? input.imageUrl : existing.imageUrl,
+      cachedImageUri: shouldClearCache ? null : existing.cachedImageUri,
       updatedAt: now,
       syncStatus: 'pending',
       deletedAt: null,

@@ -50,6 +50,7 @@ export async function initDatabase() {
       notes TEXT,
       image_url TEXT,
       local_image_uri TEXT,
+      cached_image_uri TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       sync_status TEXT NOT NULL DEFAULT 'pending',
@@ -93,5 +94,11 @@ export async function initDatabase() {
   // Migration for databases created before sale item tagging.
   if (!columns.some((c) => c.name === 'product_ids')) {
     await db.execAsync('ALTER TABLE sales ADD COLUMN product_ids TEXT');
+  }
+
+  // Migration for cached product images (offline image support).
+  const productColumns = await db.getAllAsync('PRAGMA table_info(products)');
+  if (!productColumns.some((c) => c.name === 'cached_image_uri')) {
+    await db.execAsync('ALTER TABLE products ADD COLUMN cached_image_uri TEXT');
   }
 }
