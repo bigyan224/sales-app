@@ -14,15 +14,22 @@ function AutoSync() {
   return null;
 }
 
+/** Minimum time the branded splash stays visible, so it never just flashes by. */
+const SPLASH_MIN_MS = 900;
+
 export default function App() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    const started = Date.now();
     initDatabase()
       .catch((err) => {
         console.error('[db] init failed:', err);
       })
-      .finally(() => setReady(true));
+      .finally(() => {
+        const wait = Math.max(0, SPLASH_MIN_MS - (Date.now() - started));
+        setTimeout(() => setReady(true), wait);
+      });
   }, []);
 
   if (!ready) {
