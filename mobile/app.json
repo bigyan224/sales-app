@@ -65,7 +65,8 @@
           "photosPermission": "Allow Sales Tracker to access your photos so you can add product images.",
           "cameraPermission": "Allow Sales Tracker to use the camera so you can photograph products."
         }
-      ]
+      ],
+      "expo-image"
     ],
     "runtimeVersion": {
       "policy": "appVersion"
