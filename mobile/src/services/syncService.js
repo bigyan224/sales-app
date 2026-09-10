@@ -1,7 +1,8 @@
+import { billRepository } from '../db/billRepository';
 import { productRepository } from '../db/productRepository';
 import { saleRepository } from '../db/saleRepository';
 import { api } from './api';
-import { flushPendingProductUploads } from './imageService';
+import { flushPendingBillUploads, flushPendingProductUploads } from './imageService';
 
 /**
  * Callbacks the sync store registers so the service can report progress.
@@ -128,6 +129,14 @@ class SyncService {
         console.error('[sync] products failed:', productErr?.message ?? productErr);
       }
 
+      // 4. Sync bills in its own scope, same isolation as products.
+      try {
+        await syncBills();
+        await flushPendingBillUploads();
+      } catch (billErr) {
+        console.error('[sync] bills failed:', billErr?.message ?? billErr);
+      }
+
       updater.setStatus('synced');
       this.clearRetry();
     } catch (err) {
@@ -177,6 +186,37 @@ async function syncProducts() {
   const remote = await api.fetchRemoteProducts(since);
   await productRepository.applyRemoteProducts(remote.products ?? []);
   await productRepository.setLastSyncAt(new Date().toISOString());
+}
+
+/** Push-then-pull for bills, mirroring the sales flow. */
+async function syncBills() {
+  const pending = await billRepository.getPendingBills();
+  const tombstones = await billRepository.getDeletedTombstones();
+  const toPush = [...pending, ...tombstones];
+
+  if (toPush.length > 0) {
+    const results = await api.pushBillBatch(toPush);
+    const syncedIds = [];
+    const deletedIds = [];
+    for (const result of results) {
+      if (result.status === 'synced' || result.status === 'up-to-date') {
+        syncedIds.push(result.id);
+      } else if (result.status === 'deleted') {
+        deletedIds.push(result.id);
+      }
+    }
+    if (syncedIds.length > 0) {
+      await billRepository.markSynced(syncedIds);
+    }
+    for (const id of deletedIds) {
+      await billRepository.hardDeleteBill(id);
+    }
+  }
+
+  const since = await billRepository.getLastSyncAt();
+  const remote = await api.fetchRemoteBills(since);
+  await billRepository.applyRemoteBills(remote.bills ?? []);
+  await billRepository.setLastSyncAt(new Date().toISOString());
 }
 
 export const syncService = new SyncService();

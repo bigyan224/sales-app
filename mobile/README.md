@@ -45,7 +45,9 @@ export const API_BASE_URL = 'http://192.168.1.100:4000/api';
 - **Products** — price lookup for every item in the shop. Search by name or
   category; each product has an optional photo, unit (piece/kg/…) and notes.
   Adding products has a fast-seed flow: after each save the form clears and
-  refocuses so a whole shelf can be entered back-to-back.
+  refocuses so a whole shelf can be entered back-to-back. The **Bills** side
+  of the same tab archives wholesale purchase bills: photo (required), shop
+  name and bill date, searchable by either, tap a row for the full photo.
 - **Pending** — all credit sales awaiting payment, with total outstanding and a
   "Mark Paid" button to settle each one.
 - **Dashboard** — monthly BS calendar heatmap + search. Shows month analytics

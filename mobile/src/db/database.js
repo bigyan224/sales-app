@@ -62,6 +62,25 @@ export async function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_products_name ON products (name);
     CREATE INDEX IF NOT EXISTS idx_products_updated_at ON products (updated_at);
     CREATE INDEX IF NOT EXISTS idx_products_sync_status ON products (sync_status);
+
+    CREATE TABLE IF NOT EXISTS bills (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      bs_date TEXT NOT NULL,
+      ad_date TEXT,
+      notes TEXT,
+      image_url TEXT,
+      local_image_uri TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      sync_status TEXT NOT NULL DEFAULT 'pending',
+      deleted_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_bills_name ON bills (name);
+    CREATE INDEX IF NOT EXISTS idx_bills_bs_date ON bills (bs_date);
+    CREATE INDEX IF NOT EXISTS idx_bills_updated_at ON bills (updated_at);
+    CREATE INDEX IF NOT EXISTS idx_bills_sync_status ON bills (sync_status);
   `);
 
   // Migration for databases created before the credit feature.

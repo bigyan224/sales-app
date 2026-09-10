@@ -38,6 +38,20 @@ export const api = {
     return data;
   },
 
+  /** Pushes local bill changes (edits + delete tombstones) to the server. */
+  async pushBillBatch(bills) {
+    const { data } = await client.post('/bills/batch-sync', { bills });
+    return data.results;
+  },
+
+  /** Pulls bills updated after `since` (null = everything). */
+  async fetchRemoteBills(since) {
+    const { data } = await client.get('/bills', {
+      params: { since: since ?? undefined, limit: PULL_LIMIT },
+    });
+    return data;
+  },
+
   /** Reports whether the backend is reachable. */
   async ping() {
     try {

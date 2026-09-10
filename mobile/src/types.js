@@ -60,6 +60,29 @@
  *
  * @typedef {{ totalSales: number, totalProfit: number, count: number }} SalesSummary
  *
+ * @typedef {{
+ *   id: string,
+ *   name: string,
+ *   bsDate: string,
+ *   adDate: string|null,
+ *   notes: string|null,
+ *   imageUrl: string|null,     // hosted photo URL (synced)
+ *   localImageUri: string|null,// device-local photo path (never synced)
+ *   createdAt: string,
+ *   updatedAt: string,
+ *   syncStatus: SyncStatus,
+ *   deletedAt: string|null
+ * }} Bill
+ *
+ * @typedef {{
+ *   name: string,
+ *   bsDate: string,
+ *   adDate?: string|null,
+ *   notes?: string|null,
+ *   localImageUri?: string|null,
+ *   imageUrl?: string|null
+ * }} BillInput
+ *
  * @typedef {{ id: string, status: 'synced'|'deleted'|'up-to-date' }} PushBatchResult
  *
  * @typedef {{ sales: Sale[], total: number }} RemoteSales

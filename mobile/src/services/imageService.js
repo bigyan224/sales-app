@@ -2,6 +2,7 @@ import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
 import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from '../config';
+import { billRepository } from '../db/billRepository';
 import { productRepository } from '../db/productRepository';
 
 /**
@@ -88,6 +89,20 @@ export async function flushPendingProductUploads() {
       await productRepository.setImageUrl(product.id, url);
     } catch (err) {
       // Keep the local photo; it will be retried on the next sync.
+      break;
+    }
+  }
+}
+
+/** Same queue for bill photos. */
+export async function flushPendingBillUploads() {
+  if (!isImageUploadConfigured()) return;
+  const pending = await billRepository.getBillsWithLocalImageOnly();
+  for (const bill of pending) {
+    try {
+      const url = await uploadProductImage(bill.localImageUri);
+      await billRepository.setImageUrl(bill.id, url);
+    } catch (err) {
       break;
     }
   }

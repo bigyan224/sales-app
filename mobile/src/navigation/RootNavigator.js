@@ -6,6 +6,7 @@ import HomeScreen from '../screens/HomeScreen';
 import ProductsScreen from '../screens/ProductsScreen';
 import PendingScreen from '../screens/PendingScreen';
 import DashboardScreen from '../screens/DashboardScreen';
+import BillFormScreen from '../screens/BillFormScreen';
 import ProductFormScreen from '../screens/ProductFormScreen';
 import EditSaleScreen from '../screens/EditSaleScreen';
 import { colors, typography } from '../theme';
@@ -79,6 +80,11 @@ export function RootNavigator() {
       <Stack.Screen
         name="EditProduct"
         component={ProductFormScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="EditBill"
+        component={BillFormScreen}
         options={{ presentation: 'modal' }}
       />
     </Stack.Navigator>

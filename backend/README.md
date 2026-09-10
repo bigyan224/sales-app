@@ -54,6 +54,12 @@ All under `/api`.
 | PUT    | `/products/:id`          | Update a product (last-write-wins by `updatedAt`)        |
 | DELETE | `/products/:id`          | Delete a product                                         |
 | POST   | `/products/batch-sync`   | Batch push for offline sync (same contract as sales)     |
+| GET    | `/bills`                 | List bills. Query: `since`, `limit`, `offset`            |
+| GET    | `/bills/:id`             | Get one bill by UUID                                     |
+| POST   | `/bills`                 | Create a bill (idempotent upsert by UUID)                |
+| PUT    | `/bills/:id`             | Update a bill (last-write-wins by `updatedAt`)           |
+| DELETE | `/bills/:id`             | Delete a bill                                            |
+| POST   | `/bills/batch-sync`      | Batch push for offline sync (same contract as sales)     |
 
 ## Product photos (Cloudinary)
 
