@@ -6,7 +6,15 @@
  * Android emulator -> `http://10.0.2.2:4000/api`
  * iOS simulator    -> `http://localhost:4000/api`
  */
-export const API_BASE_URL = 'https://noon-dvd-tank-eventually.trycloudflare.com/api';
+/**
+ * Primary = self-hosted laptop via Tailscale Funnel (stable public URL, no
+ * Tailscale needed on phone). Fallback = Render free (new account).
+ * Both share the same MongoDB Atlas so failover never splits data.
+ */
+export const API_PRIMARY_URL = 'https://bigyan-tecra-a40-c.tail9e6e2f.ts.net/api';
+export const API_FALLBACK_URL = 'https://sales-app-3jjs.onrender.com/api';
+// Backwards compat: single base URL = primary.
+export const API_BASE_URL = API_PRIMARY_URL;
 // export const API_BASE_URL = 'https://sales-app-s0cu.onrender.com/api';
 // export const API_BASE_URL = 'http://192.168.1.68:4000/api';
 
