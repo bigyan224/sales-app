@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii } from '../theme';
+import { useServerStore } from '../state/serverStore';
 import { useSyncStore } from '../state/syncStore';
+import { ServerStatus } from './ServerStatus';
 
 const STATUS = {
   idle: { icon: 'sync', color: colors.textMuted, bg: colors.border },
@@ -20,29 +22,33 @@ const STATUS_TEXT = {
   offline: 'Offline',
 };
 
-/** Compact tappable sync button shown in the Home header. */
+/** Compact tappable server/sync button shown in the Home header. Opens server picker. */
 export function SyncBadge() {
   const status = useSyncStore((s) => s.status);
   const isOnline = useSyncStore((s) => s.isOnline);
-  const syncNow = useSyncStore((s) => s.syncNow);
+  const [open, setOpen] = useState(false);
 
   const effective = isOnline === false && status === 'idle' ? 'offline' : status;
   const meta = STATUS[effective] ?? STATUS.idle;
   const label = STATUS_TEXT[effective] ?? 'Ready';
+  const active = useServerStore((s) => s.active);
 
   return (
-    <Pressable
-      onPress={() => void syncNow()}
-      accessibilityRole="button"
-      accessibilityLabel={`Sync status: ${label}. Tap to sync now.`}
-      style={({ pressed }) => [
-        styles.button,
-        { backgroundColor: meta.bg },
-        pressed && styles.pressed,
-      ]}
-    >
-      <Ionicons name={meta.icon} size={20} color={meta.color} />
-    </Pressable>
+    <>
+      <Pressable
+        onPress={() => setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={`Server: ${active ?? 'offline'}. Sync status: ${label}. Tap to change server.`}
+        style={({ pressed }) => [
+          styles.button,
+          { backgroundColor: meta.bg },
+          pressed && styles.pressed,
+        ]}
+      >
+        <Ionicons name={meta.icon} size={20} color={meta.color} />
+      </Pressable>
+      <ServerStatus visible={open} onClose={() => setOpen(false)} />
+    </>
   );
 }
 

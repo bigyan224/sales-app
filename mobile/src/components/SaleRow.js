@@ -3,17 +3,20 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing, typography } from '../theme';
 import { formatBsLong, parseBsDateString } from '../services/nepaliDate';
 import { formatMoney } from '../utils/format';
+import { formatSaleTimeNpt } from '../utils/nepaliTime';
 
 export function SaleRow({ sale, onEdit, onDelete, onMarkPaid }) {
   const parts = parseBsDateString(sale.bsDate);
   const dateLabel = parts ? formatBsLong(parts) : sale.bsDate;
   const isCredit = sale.paymentStatus === 'pending';
+  const timeLabel = formatSaleTimeNpt(sale.createdAt);
 
   return (
     <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.date}>{dateLabel}</Text>
+          {timeLabel ? <Text style={styles.time}>{timeLabel}</Text> : null}
           {isCredit ? <Text style={styles.creditBadge}>Credit</Text> : null}
         </View>
         <Text style={styles.amount}>{formatMoney(sale.salesAmount)}</Text>
@@ -79,6 +82,11 @@ const styles = StyleSheet.create({
     fontSize: typography.small,
     color: colors.textMuted,
     flexShrink: 1,
+  },
+  time: {
+    fontSize: 10,
+    color: colors.textMuted,
+    flexShrink: 0,
   },
   creditBadge: {
     backgroundColor: colors.warningSoft,

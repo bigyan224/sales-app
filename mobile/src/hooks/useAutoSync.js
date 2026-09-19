@@ -5,6 +5,7 @@ import { SYNC_INTERVAL_MS } from '../config';
 import { syncService } from '../services/syncService';
 import { useProductsStore } from '../state/productStore';
 import { useSalesStore } from '../state/salesStore';
+import { useServerStore } from '../state/serverStore';
 import { useSyncStore } from '../state/syncStore';
 
 const isOnline = (state) =>
@@ -34,6 +35,7 @@ export function useAutoSync() {
         });
       void useSalesStore.getState().refresh();
       void useProductsStore.getState().refresh();
+      void useServerStore.getState().init().then(() => useServerStore.getState().refresh());
     };
 
     refreshAndSync();
@@ -41,7 +43,10 @@ export function useAutoSync() {
     const subscription = Network.addNetworkStateListener((state) => {
       const online = isOnline(state);
       useSyncStore.getState().setOnline(online);
-      if (online) void syncService.syncNow();
+      if (online) {
+        void useServerStore.getState().refresh();
+        void syncService.syncNow();
+      }
     });
 
     const appStateSubscription = AppState.addEventListener('change', (next) => {

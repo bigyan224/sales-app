@@ -32,13 +32,63 @@ function shouldFailOver(err) {
   return status >= 500;
 }
 
+/**
+ * Manual server choice. 'auto' (default) keeps previous behavior: primary
+ * first, fallback on network/5xx. 'primary'/'fallback' pin to one backend.
+ * Set via `setServerMode` from the server store / UI. No Switch component.
+ */
+let serverMode = 'auto';
+let lastActive = null;
+
+export function setServerMode(mode) {
+  if (mode === 'primary' || mode === 'fallback' || mode === 'auto') {
+    serverMode = mode;
+  }
+}
+
+export function getServerMode() {
+  return serverMode;
+}
+
+export function getLastActiveServer() {
+  return lastActive;
+}
+
 async function withFailover(fn) {
+  const run = async (client, name) => {
+    const result = await fn(client);
+    lastActive = name;
+    return result;
+  };
+  if (serverMode === 'primary') {
+    return run(primary, 'primary');
+  }
+  if (serverMode === 'fallback') {
+    return run(fallback, 'fallback');
+  }
   try {
-    return await fn(primary);
+    return await run(primary, 'primary');
   } catch (err) {
     if (!shouldFailOver(err)) throw err;
-    return fn(fallback);
+    return run(fallback, 'fallback');
   }
+}
+
+/** Probe each backend individually for the server status UI. */
+export async function checkServers() {
+  const probe = async (client) => {
+    try {
+      await client.get('/health', { timeout: 6000 });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const [primaryOnline, fallbackOnline] = await Promise.all([
+    probe(primary),
+    probe(fallback),
+  ]);
+  return { primaryOnline, fallbackOnline };
 }
 
 export const api = {

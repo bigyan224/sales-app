@@ -81,6 +81,11 @@ function ProductRowInner({ product, onEdit, onDelete }) {
                 {[product.category, product.unit].filter(Boolean).join(' • ')}
               </Text>
             ) : null}
+            {product.notes ? (
+              <Text style={styles.notes} numberOfLines={2}>
+                {product.notes}
+              </Text>
+            ) : null}
           </View>
           <View style={styles.priceBox}>
             <Text style={styles.price}>{formatMoney(product.price)}</Text>
@@ -133,6 +138,11 @@ function ProductRowInner({ product, onEdit, onDelete }) {
             {formatMoney(product.price)}
             {product.unit ? ` /${product.unit}` : ''}
           </Text>
+          {product.notes ? (
+            <Text style={styles.viewerNotes} numberOfLines={3}>
+              {product.notes}
+            </Text>
+          ) : null}
           <Text style={styles.viewerHint}>Tap anywhere to close</Text>
         </Pressable>
       </Modal>
@@ -182,6 +192,12 @@ const styles = StyleSheet.create({
   meta: {
     fontSize: typography.small,
     color: colors.textMuted,
+  },
+  notes: {
+    fontSize: typography.small,
+    color: colors.textMuted,
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   priceBox: {
     alignItems: 'flex-end',
@@ -234,6 +250,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#7EB3FF',
     marginTop: spacing.xs,
+  },
+  viewerNotes: {
+    fontSize: typography.small,
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
   },
   viewerHint: {
     fontSize: typography.small,
