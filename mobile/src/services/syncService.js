@@ -113,6 +113,13 @@ class SyncService {
       }
 
       // 2. Pull server changes (including tombstones).
+      // One-time repair: full pull so sales created offline and missed by the
+      // old client-updatedAt cursor appear on this device; incremental after.
+      if (!(await saleRepository.isSalesRepairDone())) {
+        const full = await api.fetchRemote(null);
+        await saleRepository.applyRemoteSales(full.sales ?? []);
+        await saleRepository.setSalesRepairDone();
+      }
       const since = await saleRepository.getLastSyncAt();
       const remote = await api.fetchRemote(since);
       await saleRepository.applyRemoteSales(remote.sales);

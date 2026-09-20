@@ -24,10 +24,13 @@ function docToSale(doc) {
 export async function getSales(options = {}) {
   const query = {};
 
-  // Pull syncs (since) must include tombstones so clients can delete locally;
+  // Pull syncs (since) filter on the SERVER receipt clock, not the client
+  // updatedAt — otherwise records created offline and pushed late (backdated
+  // updatedAt) fall behind other devices' cursors and are missed forever.
+  // The since branch must include tombstones so clients can delete locally;
   // plain listings hide deleted records.
   if (options.since) {
-    query.updatedAt = { $gt: options.since };
+    query.syncedAt = { $gt: options.since };
   } else {
     query.deletedAt = null;
   }
@@ -46,7 +49,7 @@ export async function getSales(options = {}) {
   const offset = Math.max(options.offset ?? 0, 0);
 
   const [docs, total] = await Promise.all([
-    SaleModel.find(query).sort({ updatedAt: -1 }).skip(offset).limit(limit).lean(),
+    SaleModel.find(query).sort({ syncedAt: -1 }).skip(offset).limit(limit).lean(),
     SaleModel.countDocuments(query),
   ]);
 
@@ -58,13 +61,26 @@ export async function getSaleById(id) {
   return doc ? docToSale(doc) : null;
 }
 
+/** One-time backfill: docs written before syncedAt existed inherit updatedAt. */
+export async function migrateSalesSyncedAt() {
+  const result = await SaleModel.updateMany(
+    { $or: [{ syncedAt: { $exists: false } }, { syncedAt: null }] },
+    [{ $set: { syncedAt: '$updatedAt' } }],
+  );
+  return result.modifiedCount ?? 0;
+}
+
 /**
- * Last-write-wins batch sync. Records whose `updatedAt` is older than (or equal
- * to) the stored copy are skipped and reported as `up-to-date`. Deleted
- * tombstones are hard-deleted on the server.
+ * Last-write-wins batch sync (conflicts still resolve on the CLIENT
+ * `updatedAt`). Every write is stamped with the SERVER receipt time
+ * (`syncedAt`), which is what pull syncs filter on — so late-pushed
+ * offline records can never fall behind another device's `since` cursor.
+ * Deleted tombstones are retained (not hard-deleted) so late-pushed deletes
+ * also propagate to other devices on their next pull.
  */
 export async function batchSync(items) {
   const results = [];
+  const now = new Date().toISOString();
 
   const active = items.filter((item) => item.syncStatus !== 'deleted');
   const tombstones = items.filter((item) => item.syncStatus === 'deleted');
@@ -97,6 +113,7 @@ export async function batchSync(items) {
               productIds: item.productIds ?? [],
               createdAt: item.createdAt,
               updatedAt: item.updatedAt,
+              syncedAt: now,
               syncStatus: 'synced',
               deletedAt: null,
             },
@@ -113,7 +130,22 @@ export async function batchSync(items) {
   }
 
   if (tombstones.length > 0) {
-    await SaleModel.deleteMany({ _id: { $in: tombstones.map((t) => t.id) } });
+    await SaleModel.bulkWrite(
+      tombstones.map((t) => ({
+        updateOne: {
+          filter: { _id: t.id },
+          update: {
+            $set: {
+              deletedAt: t.deletedAt ?? now,
+              syncedAt: now,
+              syncStatus: 'deleted',
+            },
+          },
+          upsert: true,
+        },
+      })),
+      { ordered: false },
+    );
     for (const tombstone of tombstones) {
       results.push({ id: tombstone.id, status: 'deleted' });
     }

@@ -21,6 +21,10 @@ const saleSchema = new mongoose.Schema(
     productIds: { type: [String], default: [] },
     createdAt: { type: String, required: true },
     updatedAt: { type: String, required: true, index: true },
+    // Server receipt clock: stamped on every batch-sync write. Pull syncs
+    // filter on this (not the client updatedAt) so offline-created records
+    // pushed late are never skipped by other devices' `since` cursors.
+    syncedAt: { type: String, required: false, default: null, index: true },
     syncStatus: {
       type: String,
       enum: ['synced', 'pending', 'deleted'],

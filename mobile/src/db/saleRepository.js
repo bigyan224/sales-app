@@ -236,6 +236,22 @@ export async function setLastSyncAt(iso) {
   );
 }
 
+/** One-time repair flag: full backfill pull for sales missed by the old cursor. */
+export async function isSalesRepairDone() {
+  const db = await getDatabase();
+  const row = await db.getFirstAsync(
+    "SELECT value FROM sync_meta WHERE key = 'sales_repair_v2_done'",
+  );
+  return row?.value === '1';
+}
+
+export async function setSalesRepairDone() {
+  const db = await getDatabase();
+  await db.runAsync(
+    "INSERT OR REPLACE INTO sync_meta (key, value) VALUES ('sales_repair_v2_done', '1')",
+  );
+}
+
 /**
  * Applies remote sales pulled from the server. Local unsynced edits are never
  * clobbered; they stay pending and win the next push.
@@ -281,5 +297,7 @@ export const saleRepository = {
   getSummaryByMonth,
   getLastSyncAt,
   setLastSyncAt,
+  isSalesRepairDone,
+  setSalesRepairDone,
   applyRemoteSales,
 };
